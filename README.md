@@ -42,9 +42,9 @@ Please refer to the individual directories for detailed instructions on how to r
 
 ## Requirements
 
-Both implementations require the following:
+```bash
+conda create -n gpt python=3.10 -y
+pip install -r requirements.txt
 
-- Python 3.10
-- PyTorch 2.2.2
-- matplotlib
+python gpt.py # or gpt_.py
 
