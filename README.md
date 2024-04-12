@@ -34,7 +34,9 @@ data use minbpe as the tokenizer
 
 # Trained components
 You can find trained models in model_dicttrained dic
+
 tokenizers in tokenizers dic
+
 dataset in data dic
 
 # Usage
