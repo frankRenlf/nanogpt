@@ -4,7 +4,7 @@ This repository contains two distinct implementations of the multi-head attentio
 
 ## Implementation Details
 
-### Single-Matrix-Multiplication GPT (SM-GPT)
+### Single-Matrix-Multiplication Multi-Head GPT (SM-GPT)
 
 The `gpt_.py` contains an implementation of the GPT model that utilizes a single matrix multiplication to compute multi-head attention. This method reshapes the input tensor to allow for parallel computation of all heads within the attention mechanism. The main advantage of this approach is efficiency; by performing one large matrix multiplication instead of multiple smaller ones, we reduce computational overhead and take better advantage of hardware acceleration.
 
