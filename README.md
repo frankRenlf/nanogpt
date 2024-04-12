@@ -54,3 +54,7 @@ pip install -r requirements.txt
 ```bash
 python gpt.py # or gpt_.py
 ```
+
+# Future work
+
+prepare to add rlhf module
