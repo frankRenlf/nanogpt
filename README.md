@@ -45,6 +45,8 @@ Please refer to the individual directories for detailed instructions on how to r
 ```bash
 conda create -n gpt python=3.10 -y
 pip install -r requirements.txt
-
+```
+## train or generate
+```bash
 python gpt.py # or gpt_.py
-
+```
