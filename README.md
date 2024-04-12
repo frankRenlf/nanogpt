@@ -22,25 +22,27 @@ Key features:
 - Direct control over each head's computation, allowing for custom head-level manipulations.
 - Each head's output can be independently analyzed before concatenation.
 
-## Comparison
+# Comparison
 
 - `gpt_.py` is optimized for performance and is best suited for scenarios where computational resources and efficiency are paramount.
 - `gpt.py` is optimized for clarity and is best suited for educational purposes, debugging, or research where individual attention head behavior needs to be studied.
 
 Both implementations achieve the same theoretical result, but they differ in execution and performance characteristics.
 
-## Tokenize
+# Tokenize
 data use minbpe as the tokenizer
 
 # Trained components
-You can find trained models in model_dict, trained tokenizers in tokenizers
+You can find trained models in model_dicttrained dic
+tokenizers in tokenizers dic
+dataset in data dic
 
-## Usage
+# Usage
 
 Please refer to the individual directories for detailed instructions on how to run each implementation.
 
 
-## Requirements
+# Requirements
 
 ```bash
 conda create -n gpt python=3.10 -y
