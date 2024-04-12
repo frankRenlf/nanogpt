@@ -33,11 +33,10 @@ Both implementations achieve the same theoretical result, but they differ in exe
 data use minbpe as the tokenizer
 
 # Trained components
-You can find trained models in model_dicttrained dic
-
-tokenizers in tokenizers dic
-
-dataset in data dic
+You can find:
+- trained models in model_dicttrained dic
+- tokenizers in tokenizers dic
+- dataset in data dic
 
 # Usage
 
