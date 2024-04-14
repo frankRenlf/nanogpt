@@ -51,6 +51,9 @@ Please refer to the individual directories for detailed instructions on how to r
 
 ```bash
 conda create -n gpt python=3.10 -y
+
+conda activate gpt
+
 pip install -r requirements.txt
 ```
 ## train or generate
