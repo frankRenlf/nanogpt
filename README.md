@@ -39,6 +39,9 @@ You can find:
 - dataset in data dict
 - generated text in generate_text dict
 
+You can modify config:
+- config in config.py
+
 # Usage
 
 Please refer to the individual directories for detailed instructions on how to run each implementation.
