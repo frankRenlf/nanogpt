@@ -40,6 +40,12 @@ def estimate_loss():
     return out
 
 
+def generate_square_subsequent_mask(size):
+    """生成因果掩码，掩盖未来的位置"""
+    mask = torch.triu(torch.ones(size, size), diagonal=1).to(device)
+    return mask
+
+
 # @save
 def transpose_qkv(X, num_heads):
     """为了多注意力头的并行计算而变换形状"""
@@ -67,40 +73,6 @@ def transpose_output(X, num_heads):
     return X.reshape(X.shape[0], X.shape[1], -1)
 
 
-def sequence_mask(X, valid_len, value=0):
-    """在序列中屏蔽不相关的项"""
-    maxlen = X.size(1)
-    # print(X.shape,valid_len.shape)
-    mask = (
-        torch.arange((maxlen), dtype=torch.float32, device=X.device)[None, :]
-        < valid_len[:, None]
-    )
-    X[~mask] = value
-    return X
-
-
-# @save
-def masked_softmax(X, valid_lens):
-    """通过在最后一个轴上掩蔽元素来执行softmax操作"""
-    # X:3D张量，valid_lens:1D或2D张量
-    if valid_lens is None:
-        return nn.functional.softmax(X, dim=-1)
-    else:
-        shape = X.shape
-        if valid_lens.dim() == 1:
-            valid_lens = torch.repeat_interleave(valid_lens, shape[1])
-        else:
-            valid_lens = valid_lens.reshape(-1)
-        # 最后一轴上被掩蔽的元素使用一个非常大的负值替换，从而其softmax输出为0
-
-        X = sequence_mask(X.reshape(-1, shape[-1]), valid_lens, value=float("-inf"))
-        # print(X.shape)
-        # print(X[0:3, :])
-        # print(X[256, :])
-        # assert 1 == 2
-        return nn.functional.softmax(X.reshape(shape), dim=-1)
-
-
 # @save
 class DotProductAttention(nn.Module):
     """缩放点积注意力"""
@@ -113,12 +85,14 @@ class DotProductAttention(nn.Module):
     # keys的形状：(batch_size，“键－值”对的个数，d)
     # values的形状：(batch_size，“键－值”对的个数，值的维度)
     # valid_lens的形状:(batch_size，)或者(batch_size，查询的个数)
-    def forward(self, queries, keys, values, valid_lens=None):
-        d = queries.shape[-1]
-        # 设置transpose_b=True为了交换keys的最后两个维度
-        scores = torch.bmm(queries, keys.transpose(1, 2)) / math.sqrt(d)
-        self.attention_weights = masked_softmax(scores, valid_lens)
-        return torch.bmm(self.dropout(self.attention_weights), values)
+    def forward(self, queries, keys, values, mask=None):
+        d_k = queries.shape[-1]
+        scores = torch.bmm(queries, keys.transpose(-2, -1)) / math.sqrt(d_k)
+        if mask is not None:
+            # mask = mask.unsqueeze(1)
+            scores = scores.masked_fill(mask == 1, value=float("-inf"))
+        scores = F.softmax(scores, dim=-1)
+        return torch.bmm(self.dropout(scores), values)
 
 
 # @save
@@ -138,36 +112,24 @@ class MSA(nn.Module):
     ):
         super(MSA, self).__init__(**kwargs)
         self.num_heads = num_heads
+        self.num_hiddens = num_hiddens
+        self.d_k = num_hiddens // num_heads
         self.attention = DotProductAttention(dropout)
         self.W_q = nn.Linear(query_size, num_hiddens, bias=bias)
         self.W_k = nn.Linear(key_size, num_hiddens, bias=bias)
         self.W_v = nn.Linear(value_size, num_hiddens, bias=bias)
         self.W_o = nn.Linear(num_hiddens, num_hiddens, bias=bias)
 
-    def forward(self, queries, keys, values, valid_lens):
-        # queries，keys，values的形状:
-        # (batch_size，查询或者“键－值”对的个数，num_hiddens)
-        # valid_lens　的形状:
-        # (batch_size，)或(batch_size，查询的个数)
-        # 经过变换后，输出的queries，keys，values　的形状:
-        # (batch_size*num_heads，查询或者“键－值”对的个数，
-        # num_hiddens/num_heads)
+    def forward(self, queries, keys, values, mask):
+
+        bs = queries.size(0)
+
         queries = transpose_qkv(self.W_q(queries), self.num_heads)
         keys = transpose_qkv(self.W_k(keys), self.num_heads)
         values = transpose_qkv(self.W_v(values), self.num_heads)
-        if valid_lens is not None:
-            # 在轴0，将第一项（标量或者矢量）复制num_heads次，
-            # 然后如此复制第二项，然后诸如此类。
-            valid_lens = torch.repeat_interleave(
-                valid_lens, repeats=self.num_heads, dim=0
-            )
-        # output的形状:(batch_size*num_heads，查询的个数，
-        # num_hiddens/num_heads)
-        output = self.attention(queries, keys, values, valid_lens)
 
-        # assert 1 == 2
+        output = self.attention(queries, keys, values, mask)
 
-        # output_concat的形状:(batch_size，查询的个数，num_hiddens)
         output_concat = transpose_output(output, self.num_heads)
         return self.W_o(output_concat)
 
@@ -188,11 +150,7 @@ class MultiHeadAttention(nn.Module):
             x,
             x,
             x,
-            (
-                torch.arange(1, x.shape[1] + 1, device=device).repeat(batch_size, 1)
-                if mode == "train"
-                else None
-            ),
+            (generate_square_subsequent_mask(block_size) if mode == "train" else None),
         )
         out = self.dropout(out)
         return out
@@ -321,14 +279,14 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 t1 = time.time()
-open("generate/time/time_.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
+open("generate/time/time_cur3.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
 
 # generate from the model
 mode = "test"
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 # print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
 
-open("generate_text/gpt_.txt", "w").write(
+open("generate/text/gpt_cur3.txt", "w").write(
     decode(model.generate(context, max_new_tokens=block_size * 2)[0].tolist())
 )
-torch.save(model, "model_dict/gpt_.pth")
+torch.save(model, "model_dict/gpt_cur3.pth")

@@ -63,11 +63,9 @@ class DotProductAttention(nn.Module):
         scores = torch.matmul(queries, keys.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
             # mask = mask.unsqueeze(1)
-            scores = scores.masked_fill(mask == 1, -1e9)
+            scores = scores.masked_fill(mask == 1, value=float("-inf"))
         scores = F.softmax(scores, dim=-1)
-        if mode == "train":
-            scores = self.dropout(scores)
-        return torch.matmul(scores, values)
+        return torch.matmul(self.dropout(scores), values)
 
 
 # @save
@@ -135,6 +133,21 @@ class MultiHeadAttention(nn.Module):
         return out
 
 
+class SwiGLU(nn.Module):
+    def __init__(self, input_dim):
+        super(SwiGLU, self).__init__()
+        # 定义门控权重
+        self.gate = nn.Linear(input_dim, input_dim)
+
+    def forward(self, x):
+        # Swish激活部分
+        swish = x * torch.sigmoid(x)
+        # 线性门控部分
+        gate = self.gate(x)
+        # 结合Swish和门控
+        return swish * gate
+
+
 class FeedFoward(nn.Module):
     """a simple linear layer followed by a non-linearity"""
 
@@ -142,13 +155,31 @@ class FeedFoward(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(n_embd, 4 * n_embd),
-            nn.ReLU(),
+            SwiGLU(4 * n_embd),
             nn.Linear(4 * n_embd, n_embd),
             nn.Dropout(dropout),
         )
 
     def forward(self, x):
         return self.net(x)
+
+
+class LlamaRMSNorm(nn.Module):
+    def __init__(self, hidden_size, eps=1e-6):
+        """
+        LlamaRMSNorm is equivalent to T5LayerNorm
+        """
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.variance_epsilon = eps  # eps 防止取倒数之后分母为 0
+
+    def forward(self, hidden_states):
+        input_dtype = hidden_states.dtype
+        variance = hidden_states.to(torch.float32).pow(2).mean(-1, keepdim=True)
+        hidden_states = hidden_states * torch.rsqrt(
+            variance + self.variance_epsilon
+        )  # weight 是末尾乘的可训练参数, 即 g_i
+        return (self.weight * hidden_states).to(input_dtype)
 
 
 class Block(nn.Module):
@@ -160,8 +191,8 @@ class Block(nn.Module):
         head_size = n_embd // n_head
         self.sa = MultiHeadAttention(n_head, head_size)
         self.ffwd = FeedFoward(n_embd)
-        self.ln1 = nn.LayerNorm(n_embd)
-        self.ln2 = nn.LayerNorm(n_embd)
+        self.ln1 = LlamaRMSNorm(n_embd)
+        self.ln2 = LlamaRMSNorm(n_embd)
 
     def forward(self, x):
         x = x + self.sa(self.ln1(x))
@@ -233,9 +264,9 @@ class GPTLanguageModel(nn.Module):
 
 
 model = GPTLanguageModel()
-m = model.to(device)
+model = model.to(device)
 # print the number of parameters in the model
-print(sum(p.numel() for p in m.parameters()) / 1e6, "M parameters")
+print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")
 
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
@@ -258,14 +289,14 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 t1 = time.time()
-open("generate_text/time_cur.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
+open("generate/time/time_llama.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
 
 # generate from the model
 mode = "test"
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 # print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
 
-open("generate_text/gpt_cur.txt", "w").write(
-    decode(m.generate(context, max_new_tokens=10000)[0].tolist())
+open("generate/text/gpt_llama.txt", "w").write(
+    decode(model.generate(context, max_new_tokens=block_size * 2)[0].tolist())
 )
-torch.save(model, "model_dict/gpt_cur.pth")
+torch.save(model, "model_dict/gpt_llama.pth")

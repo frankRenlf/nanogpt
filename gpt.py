@@ -183,14 +183,13 @@ class GPTLanguageModel(nn.Module):
 
 
 model = GPTLanguageModel()
-m = model.to(device)
+model = model.to(device)
 # print the number of parameters in the model
-print(sum(p.numel() for p in m.parameters()) / 1e6, "M parameters")
+print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")
 
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 t0 = time.time()
-
 for iter in range(max_iters):
 
     # every once in a while evaluate the loss on train and val sets
@@ -209,13 +208,13 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 t1 = time.time()
-open("generate_text/time.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
+open("generate/time/time.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
 
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 # print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
 
-open("generate_text/gpt.txt", "w").write(
-    decode(m.generate(context, max_new_tokens=10000)[0].tolist())
+open("generate/text/gpt.txt", "w").write(
+    decode(model.generate(context, max_new_tokens=block_size * 2)[0].tolist())
 )
 torch.save(model, "model_dict/gpt.pth")

@@ -47,6 +47,33 @@ def generate_square_subsequent_mask(size):
 
 
 # @save
+def transpose_qkv(X, num_heads):
+    """为了多注意力头的并行计算而变换形状"""
+    # 输入X的形状:(batch_size，查询或者“键－值”对的个数，num_hiddens)
+    # 输出X的形状:(batch_size，查询或者“键－值”对的个数，num_heads，
+    # num_hiddens/num_heads)
+    X = X.reshape(X.shape[0], X.shape[1], num_heads, -1)
+
+    # 输出X的形状:(batch_size，num_heads，查询或者“键－值”对的个数,
+    # num_hiddens/num_heads)
+    X = X.permute(0, 2, 1, 3)
+
+    # 最终输出的形状:(batch_size*num_heads,查询或者“键－值”对的个数,
+    # num_hiddens/num_heads)
+    return X.reshape(-1, X.shape[2], X.shape[3])
+
+
+# @save
+def transpose_output(X, num_heads):
+    """逆转transpose_qkv函数的操作"""
+    # print(X.shape)
+    # assert 1 == 2
+    X = X.reshape(-1, num_heads, X.shape[1], X.shape[2])
+    X = X.permute(0, 2, 1, 3)
+    return X.reshape(X.shape[0], X.shape[1], -1)
+
+
+# @save
 class DotProductAttention(nn.Module):
     """缩放点积注意力"""
 
@@ -63,11 +90,9 @@ class DotProductAttention(nn.Module):
         scores = torch.matmul(queries, keys.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
             # mask = mask.unsqueeze(1)
-            scores = scores.masked_fill(mask == 1, -1e9)
+            scores = scores.masked_fill(mask == 1, value=float("-inf"))
         scores = F.softmax(scores, dim=-1)
-        if mode == "train":
-            scores = self.dropout(scores)
-        return torch.matmul(scores, values)
+        return torch.matmul(self.dropout(scores), values)
 
 
 # @save
@@ -233,9 +258,9 @@ class GPTLanguageModel(nn.Module):
 
 
 model = GPTLanguageModel()
-m = model.to(device)
+model = model.to(device)
 # print the number of parameters in the model
-print(sum(p.numel() for p in m.parameters()) / 1e6, "M parameters")
+print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")
 
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
@@ -258,14 +283,14 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 t1 = time.time()
-open("generate_text/time_cur.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
+open("generate/time/time_cur4.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
 
 # generate from the model
 mode = "test"
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 # print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
 
-open("generate_text/gpt_cur.txt", "w").write(
-    decode(m.generate(context, max_new_tokens=10000)[0].tolist())
+open("generate/text/gpt_cur4.txt", "w").write(
+    decode(model.generate(context, max_new_tokens=block_size * 2)[0].tolist())
 )
-torch.save(model, "model_dict/gpt_cur.pth")
+torch.save(model, "model_dict/gpt_cur4.pth")

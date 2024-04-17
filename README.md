@@ -23,10 +23,10 @@ Key features:
 - Each head's output can be independently analyzed before concatenation.
 
 # Comparison
-
-- `gpt_.py` is optimized for performance and is best suited for scenarios where computational resources and efficiency are paramount.
-- `gpt_cur.py` is a simple version of gpt_.py, easier to understand mask and attention mechanisms.
 - `gpt.py` is optimized for clarity and is best suited for educational purposes, debugging, or research where individual attention head behavior needs to be studied.
+- `gpt_.py` is optimized for performance and is best suited for scenarios where computational resources and efficiency are paramount.
+- `gpt_cur3.py` and `gpt_cur4.py` are two simple version of gpt_.py, easier to understand mask and attention mechanisms
+- `gpt_llama.py` change the original component to llama version, such as RMSNorm, SwiGLU.
 
 Both implementations achieve the same theoretical result, but they differ in execution and performance characteristics.
 
@@ -35,10 +35,11 @@ data use minbpe as the tokenizer
 
 # Trained components
 You can find:
-- trained models in model_dict dict
-- trained tokenizers in tokenizers dict
-- dataset in data dict
-- generated text in generate_text dict
+- trained models in model_dict 
+- trained tokenizers in tokenizers 
+- dataset in data 
+- generated text in generate/text 
+- time consumption in generate/time 
 
 You can modify config:
 - config in config.py
