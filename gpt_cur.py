@@ -42,7 +42,7 @@ def estimate_loss():
 
 def generate_square_subsequent_mask(size):
     """生成因果掩码，掩盖未来的位置"""
-    mask = torch.triu(torch.ones(size, size), diagonal=1)
+    mask = torch.triu(torch.ones(size, size), diagonal=1).cuda()
     return mask
 
 
@@ -62,12 +62,12 @@ class DotProductAttention(nn.Module):
         d_k = queries.shape[-1]
         scores = torch.matmul(queries, keys.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
-            mask = mask.unsqueeze(1)
-            scores = scores.masked_fill(mask == 0, -1e9)
+            # mask = mask.unsqueeze(1)
+            scores = scores.masked_fill(mask == 1, -1e9)
         scores = F.softmax(scores, dim=-1)
         if mode == "train":
-            scores = self.dropout(self.attention_weights)
-        return torch.bmm(scores, values)
+            scores = self.dropout(scores)
+        return torch.matmul(scores, values)
 
 
 # @save
@@ -98,9 +98,14 @@ class MSA(nn.Module):
     def forward(self, queries, keys, values, mask):
 
         bs = queries.size(0)
+
         queries = self.W_q(queries).view(bs, -1, self.num_heads, self.d_k)
         keys = self.W_k(keys).view(bs, -1, self.num_heads, self.d_k)
         values = self.W_v(values).view(bs, -1, self.num_heads, self.d_k)
+
+        queries = queries.transpose(1, 2)
+        keys = keys.transpose(1, 2)
+        values = values.transpose(1, 2)
 
         output = self.attention(queries, keys, values, mask)
 
@@ -253,14 +258,14 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 t1 = time.time()
-open("generate_text/time_.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
+open("generate_text/time_cur.txt", "w").write(f"Training took {t1 - t0:.2f} seconds")
 
 # generate from the model
 mode = "test"
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 # print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
 
-open("generate_text/gpt_.txt", "w").write(
+open("generate_text/gpt_cur.txt", "w").write(
     decode(m.generate(context, max_new_tokens=10000)[0].tolist())
 )
-torch.save(model, "model_dict/gpt_.pth")
+torch.save(model, "model_dict/gpt_cur.pth")
