@@ -32,9 +32,9 @@ Three implementations achieve the same theoretical result, but they differ in ex
 - `gpt_llama.py` change the original component to llama version, such as RMSNorm, SwiGLU.
 
 # Time consumption
-`gpt_.py` < `gpt_cur4.py`<`gpt_cur3.py`<`gpt.py`
+`gpt_.py` < `gpt_cur4.py` < `gpt_cur3.py` < `gpt.py`
 
-`gpt_llama.py` has other components, so it's no need to compare with them.
+`gpt_llama.py` has different components, so it's no need to compare with them.
 
 # Tokenize
 data use minbpe as the tokenizer
