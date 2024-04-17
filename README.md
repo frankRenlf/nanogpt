@@ -25,6 +25,7 @@ Key features:
 # Comparison
 
 - `gpt_.py` is optimized for performance and is best suited for scenarios where computational resources and efficiency are paramount.
+- `gpt_cur.py` is a simple version of gpt_.py, easier to understand mask and attention mechanisms.
 - `gpt.py` is optimized for clarity and is best suited for educational purposes, debugging, or research where individual attention head behavior needs to be studied.
 
 Both implementations achieve the same theoretical result, but they differ in execution and performance characteristics.

@@ -42,7 +42,7 @@ def estimate_loss():
 
 def generate_square_subsequent_mask(size):
     """生成因果掩码，掩盖未来的位置"""
-    mask = torch.triu(torch.ones(size, size), diagonal=1).cuda()
+    mask = torch.triu(torch.ones(size, size), diagonal=1).to(device)
     return mask
 
 
