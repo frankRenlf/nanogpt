@@ -6,7 +6,7 @@ This repository contains two distinct implementations of the multi-head attentio
 
 ### Single-Matrix-Multiplication Multi-Head GPT (SM-GPT)
 
-The `gpt_.py` contains an implementation of the GPT model that utilizes a single matrix multiplication to compute multi-head attention. This method reshapes the input tensor to allow for parallel computation of all heads within the attention mechanism. The main advantage of this approach is efficiency; by performing one large matrix multiplication instead of multiple smaller ones, we reduce computational overhead and take better advantage of hardware acceleration.
+The `gpt_.py` `gpt_cur3.py` `gpt_cur4.py` `gpt_llama.py` contains an implementation of the GPT model that utilizes a single matrix multiplication to compute multi-head attention. This method reshapes the input tensor to allow for parallel computation of all heads within the attention mechanism. The main advantage of this approach is efficiency; by performing one large matrix multiplication instead of multiple smaller ones, we reduce computational overhead and take better advantage of hardware acceleration.
 
 Key features:
 - Efficient computation of attention with fewer sequential steps.
@@ -26,9 +26,15 @@ Key features:
 - `gpt.py` is optimized for clarity and is best suited for educational purposes, debugging, or research where individual attention head behavior needs to be studied.
 - `gpt_.py` is optimized for performance and is best suited for scenarios where computational resources and efficiency are paramount.
 - `gpt_cur3.py` and `gpt_cur4.py` are two simple version of gpt_.py, easier to understand mask and attention mechanisms, gpt_cur3 use (b*h,n,n) in attention calculation, gpt_cur4 use (b,h,n,n) in attention calculation
+
+Three implementations achieve the same theoretical result, but they differ in execution and performance characteristics.
+
 - `gpt_llama.py` change the original component to llama version, such as RMSNorm, SwiGLU.
 
-Both implementations achieve the same theoretical result, but they differ in execution and performance characteristics.
+# Time consumption
+`gpt_.py` < `gpt_cur4.py`<`gpt_cur3.py`<`gpt.py`
+
+`gpt_llama.py` has other components, so it's no need to compare with them.
 
 # Tokenize
 data use minbpe as the tokenizer
