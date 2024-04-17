@@ -25,7 +25,7 @@ Key features:
 # Comparison
 - `gpt.py` is optimized for clarity and is best suited for educational purposes, debugging, or research where individual attention head behavior needs to be studied.
 - `gpt_.py` is optimized for performance and is best suited for scenarios where computational resources and efficiency are paramount.
-- `gpt_cur3.py` and `gpt_cur4.py` are two simple version of gpt_.py, easier to understand mask and attention mechanisms
+- `gpt_cur3.py` and `gpt_cur4.py` are two simple version of gpt_.py, easier to understand mask and attention mechanisms, gpt_cur3 use (b*h,n,n) in attention calculation, gpt_cur4 use (b,h,n,n) in attention calculation
 - `gpt_llama.py` change the original component to llama version, such as RMSNorm, SwiGLU.
 
 Both implementations achieve the same theoretical result, but they differ in execution and performance characteristics.
