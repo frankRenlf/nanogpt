@@ -70,5 +70,5 @@ python gpt.py # or gpt_.py
 ```
 
 # Future work
-
-prepare to add rlhf module
+    rlhf
+    llama2
