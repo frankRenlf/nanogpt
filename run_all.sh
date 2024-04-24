@@ -10,4 +10,4 @@ do
   echo "$script finished."
 done
 
-echo "all done"
+echo "all training done"
