@@ -46,7 +46,6 @@ def generate_square_subsequent_mask(size):
     return mask
 
 
-# @save
 class DotProductAttention(nn.Module):
     """缩放点积注意力"""
 
@@ -68,7 +67,6 @@ class DotProductAttention(nn.Module):
         return torch.matmul(self.dropout(scores), values)
 
 
-# @save
 class MSA(nn.Module):
     """多头注意力"""
 

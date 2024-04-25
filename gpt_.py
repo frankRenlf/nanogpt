@@ -40,7 +40,6 @@ def estimate_loss():
     return out
 
 
-# @save
 def transpose_qkv(X, num_heads):
     """为了多注意力头的并行计算而变换形状"""
     # 输入X的形状:(batch_size，查询或者“键－值”对的个数，num_hiddens)
@@ -57,7 +56,6 @@ def transpose_qkv(X, num_heads):
     return X.reshape(-1, X.shape[2], X.shape[3])
 
 
-# @save
 def transpose_output(X, num_heads):
     """逆转transpose_qkv函数的操作"""
     # print(X.shape)
@@ -79,7 +77,6 @@ def sequence_mask(X, valid_len, value=0):
     return X
 
 
-# @save
 def masked_softmax(X, valid_lens):
     """通过在最后一个轴上掩蔽元素来执行softmax操作"""
     # X:3D张量，valid_lens:1D或2D张量
@@ -101,7 +98,6 @@ def masked_softmax(X, valid_lens):
         return nn.functional.softmax(X.reshape(shape), dim=-1)
 
 
-# @save
 class DotProductAttention(nn.Module):
     """缩放点积注意力"""
 
@@ -121,7 +117,6 @@ class DotProductAttention(nn.Module):
         return torch.bmm(self.dropout(self.attention_weights), values)
 
 
-# @save
 class MSA(nn.Module):
     """多头注意力"""
 
